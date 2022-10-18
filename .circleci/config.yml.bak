@@ -134,6 +134,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
@@ -154,14 +158,17 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt
-
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' \ 
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text >> ~/project/.circleci/ansible/inventory.txt
+            cat ~/project/.circleci/ansible/inventory.txt
+            
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
             
-      - destroy-environment                      
+      - destroy-environment:
+            workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
   
 workflows:
   default:
