@@ -221,7 +221,8 @@ jobs:
           command: |
              if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
              then
-             # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
+             # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first,
+             #If you'd like to turn off curl's verification of the certificate, use the -k (or --insecure) option.
              curl -k https://kvdb.io/5zXwjS6iotSSpzoJa5ciK9/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
              fi
       - destroy-environment:
@@ -229,13 +230,14 @@ jobs:
    
   deploy-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - run:
           name: Install dependencies
           command: |
-            yum install -y tar gzip      
+            apk add --update curl nodejs npm ansible tar gzip
+            pip install awscli     
       - run:
           name: Get backend url
           command: |
