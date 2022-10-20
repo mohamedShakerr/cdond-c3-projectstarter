@@ -337,6 +337,23 @@ jobs:
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}       
    
+  get_last_deployment_id:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - run:
+          name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
+          command: |
+            aws cloudformation \
+            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+            --no-paginate --output text > ~/textfile.txt
+      - persist_to_workspace:
+          root: ~/
+          paths: 
+            - textfile.txt
+            
   cloudfront-update:
     docker:
         - image: amazon/aws-cli
@@ -355,6 +372,30 @@ jobs:
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}       
    
+  cleanup:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Remove old stacks and files
+          command: |
+            export OldWorkflowID=$(cat ~/textfile.txt)
+            if [[ $OldWorkflowID == "" ]]
+            then
+            echo "No previous workflow"
+            else
+            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "$OldWorkflowID" ]]
+            then
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            fi
+            fi
+             
    
 workflows:
   default:
@@ -383,10 +424,10 @@ workflows:
       - deploy-backend:
           requires: [run-migrations]   
       - smoke-test:
-          requires: [deploy-backend, deploy-frontend]          
+          requires: [deploy-backend, deploy-frontend]   
+      - get_last_deployment_id:
+          requires: [smoke-test]      
       - cloudfront-update:
-          requires: [smoke-test]    
-          
-          
-  
- 
+          requires: [get_last_deployment_id]    
+      - cleanup:
+          requires: [cloudfront-update]    
