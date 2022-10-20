@@ -354,6 +354,10 @@ jobs:
           root: ~/
           paths: 
             - textfile.txt
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}     
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}        
             
   cloudfront-update:
     docker:
@@ -366,7 +370,7 @@ jobs:
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name cloudfrontStack \
-            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}     
@@ -397,7 +401,10 @@ jobs:
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
             fi
             fi
-             
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}     
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}         
    
 workflows:
   default:
