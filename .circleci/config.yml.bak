@@ -385,6 +385,7 @@ jobs:
           name: Remove old stacks and files
           command: |
             export OldWorkflowID=$(cat ~/textfile.txt)
+            echo OldWorkflowID: "${OldWorkflowID}"
             if [[ $OldWorkflowID == "" ]]
             then
             echo "No previous workflow"
