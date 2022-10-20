@@ -8,7 +8,7 @@
 
 
 - name: "Unarchive backend files"
-unarchive:
+  unarchive:
     src: artifact.tar.gz
     dest: ~/   
 
